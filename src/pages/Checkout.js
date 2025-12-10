@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { toast } from "react-toastify";
 import { FiCreditCard } from "react-icons/fi";
+import { getImageUrl } from "../utils/imageUrl";
 
 const Checkout = () => {
   const { user, isAuthenticated } = useAuth();
@@ -270,18 +271,39 @@ const Checkout = () => {
                     ? product.price
                     : 0;
 
+                const rawImage =
+                  product.images && product.images[0]
+                    ? product.images[0]
+                    : product.image || null;
+
+                const imageSrc = rawImage
+                  ? getImageUrl(rawImage)
+                  : "https://placehold.co/60x60?text=Img";
+
                 return (
                   <div
                     key={index}
                     style={{
                       display: "flex",
+                      alignItems: "center",
                       justifyContent: "space-between",
+                      gap: "0.75rem",
                       marginBottom: "0.75rem",
                       paddingBottom: "0.75rem",
                       borderBottom: "1px solid var(--gray-200)",
                     }}
                   >
-                    <div>
+                    <img
+                      src={imageSrc}
+                      alt={product.nom}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        objectFit: "cover",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: "600" }}>{product.nom}</div>
                       <small style={{ color: "var(--gray-600)" }}>
                         {item.size} | {item.color} | Qté: {quantity}

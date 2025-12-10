@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
-import { API_URL } from "../config";
+import api from "../utils/api";
+import { Helmet } from "react-helmet";
 
 import ProductCard from "../components/ProductCard";
 import { FaFilter } from "react-icons/fa";
@@ -33,7 +33,7 @@ const Products = () => {
       if (filters.maxPrix) params.maxPrix = filters.maxPrix;
       if (filters.search) params.search = filters.search;
 
-      const { data } = await axios.get(`${API_URL}/products`, { params });
+      const { data } = await api.get("/products", { params });
       setProducts(data);
     } catch (error) {
       console.error("Erreur:", error);
@@ -51,6 +51,10 @@ const Products = () => {
 
   return (
     <div className="products-page">
+      <Helmet>
+        <title>Nos Produits - VêtementShop</title>
+        <meta name="description" content="Parcourez notre catalogue de vêtements" />
+      </Helmet>
       <div className="container">
         <div className="page-header">
           <h1>Nos Produits</h1>

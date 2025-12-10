@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../utils/api";
+import { Helmet } from "react-helmet";
 
 import ProductCard from "../components/ProductCard";
 import { FiTruck, FiShield, FiCreditCard, FiArrowRight } from "react-icons/fi";
@@ -27,6 +28,10 @@ const Home = () => {
 
   return (
     <div className="home-page">
+      <Helmet>
+        <title>VêtementShop - Accueil</title>
+        <meta name="description" content="Découvrez notre collection de vêtements tendance pour toute la famille" />
+      </Helmet>
       {/* Hero Section */}
       <section
         className="hero"
@@ -224,16 +229,16 @@ const Home = () => {
             }}
           >
             {[
-              { name: "Homme", link: "/products?category=homme", emoji: "👔" },
-              { name: "Femme", link: "/products?category=femme", emoji: "👗" },
+              { name: "Homme", link: "/products?categorie=homme", emoji: "👔" },
+              { name: "Femme", link: "/products?categorie=femme", emoji: "👗" },
               {
                 name: "Enfant",
-                link: "/products?category=enfant",
+                link: "/products?categorie=enfant",
                 emoji: "👶",
               },
               {
                 name: "Accessoires",
-                link: "/products?category=accessoires",
+                link: "/products?categorie=accessoires",
                 emoji: "👜",
               },
             ].map((category) => (

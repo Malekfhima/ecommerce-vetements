@@ -16,15 +16,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Charger l'utilisateur depuis localStorage au démarrage
+  // Charger l'utilisateur depuis sessionStorage au démarrage
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error("Erreur lors du chargement de l'utilisateur:", error);
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
       }
     }
     setLoading(false);
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       setUser(data);
-      localStorage.setItem("user", JSON.stringify(data));
+      sessionStorage.setItem("user", JSON.stringify(data));
       toast.success("Connexion réussie !");
       return data;
     } catch (error) {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.post("/auth/register", userData);
       setUser(data);
-      localStorage.setItem("user", JSON.stringify(data));
+      sessionStorage.setItem("user", JSON.stringify(data));
       toast.success("Compte créé avec succès !");
       return data;
     } catch (error) {
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   // Déconnexion
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     toast.info("Vous êtes déconnecté");
   };
 
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
       };
       const { data } = await api.put("/auth/profile", userData, config);
       setUser(data);
-      localStorage.setItem("user", JSON.stringify(data));
+      sessionStorage.setItem("user", JSON.stringify(data));
       toast.success("Profil mis à jour !");
       return data;
     } catch (error) {

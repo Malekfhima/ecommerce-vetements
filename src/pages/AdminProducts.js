@@ -4,6 +4,7 @@ import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import { getImageUrl } from "../utils/imageUrl";
 
 const AdminProducts = () => {
   const { user, isAdmin } = useAuth();
@@ -17,6 +18,7 @@ const AdminProducts = () => {
     description: "",
     prix: "",
     categorie: "homme",
+    sousCategorie: "",
     tailles: [],
     couleurs: [],
     stock: "",
@@ -56,7 +58,11 @@ const AdminProducts = () => {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
-          data.append(key, value);
+          if (Array.isArray(value)) {
+            value.forEach((v) => data.append(key, v));
+          } else {
+            data.append(key, value);
+          }
         }
       });
       if (imageFile) {
@@ -88,7 +94,10 @@ const AdminProducts = () => {
       resetForm();
       fetchProducts();
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde");
+      console.error(error);
+      toast.error(
+        error.response?.data?.message || "Erreur lors de la sauvegarde"
+      );
     }
   };
 
@@ -112,8 +121,9 @@ const AdminProducts = () => {
       description: product.description,
       prix: product.prix,
       categorie: product.categorie,
-      tailles: product.tailles,
-      couleurs: product.couleurs,
+      sousCategorie: product.sousCategorie || "",
+      tailles: product.tailles || [],
+      couleurs: product.couleurs || [],
       stock: product.stock,
       images: product.images,
       prixPromo: product.prixPromo || "",
@@ -129,6 +139,7 @@ const AdminProducts = () => {
       description: "",
       prix: "",
       categorie: "homme",
+      sousCategorie: "",
       tailles: [],
       couleurs: [],
       stock: "",
@@ -254,6 +265,28 @@ const AdminProducts = () => {
               </div>
 
               <div className="form-group">
+                <label className="form-label">Sous-catégorie</label>
+                <select
+                  className="form-select"
+                  value={formData.sousCategorie}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sousCategorie: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">Choisir...</option>
+                  <option value="t-shirt">T-shirt</option>
+                  <option value="pantalon">Pantalon</option>
+                  <option value="robe">Robe</option>
+                  <option value="jupe">Jupe</option>
+                  <option value="veste">Veste</option>
+                  <option value="chaussures">Chaussures</option>
+                  <option value="sac">Sac</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Prix promo (DT)</label>
                 <input
                   type="number"
@@ -265,6 +298,45 @@ const AdminProducts = () => {
                   }
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Tailles (maintenir Ctrl pour plusieurs)</label>
+              <select
+                multiple
+                className="form-select"
+                value={formData.tailles}
+                onChange={(e) => {
+                  const options = [...e.target.selectedOptions];
+                  const values = options.map((option) => option.value);
+                  setFormData({ ...formData, tailles: values });
+                }}
+                style={{ height: "100px" }}
+              >
+                {["XS", "S", "M", "L", "XL", "XXL", "36", "38", "40", "42", "44"].map(
+                  (t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Couleurs (séparées par des virgules)</label>
+              <input
+                type="text"
+                className="form-input"
+                value={formData.couleurs.join(", ")}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    couleurs: e.target.value.split(",").map((c) => c.trim()),
+                  })
+                }
+                placeholder="Ex: Rouge, Bleu, Noir"
+              />
             </div>
 
             <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
@@ -318,10 +390,7 @@ const AdminProducts = () => {
                     }}
                   >
                     <img
-                      src={
-                        product.images?.[0] ||
-                        "https://placehold.co/50x50?text=Img"
-                      }
+                      src={getImageUrl(product.images?.[0])}
                       alt={product.nom}
                       style={{
                         width: "50px",

@@ -1,28 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { getImageUrl } from "../utils/imageUrl";
 
 const Orders = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = useCallback(async () => {
     try {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
       const config = {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },
       };
       const { data } = await axios.get(`${API_URL}/orders/myorders`, config);
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : data.orders || []);
     } catch (error) {
       toast.error("Erreur lors du chargement des commandes");
     } finally {
@@ -31,10 +29,17 @@ const Orders = () => {
   }, [user]);
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (!isAuthenticated) {
+      navigate("/login?redirect=/orders");
+      return;
+    }
+    if (user) {
+      fetchOrders();
+    }
+  }, [fetchOrders, isAuthenticated, navigate, user]);
 
-  const getStatutBadge = (statut) => {
+  const getStatutBadge = (statusOrStatut) => {
+    const statut = statusOrStatut || "";
     const badges = {
       en_attente: "badge-warning",
       confirmee: "badge-info",
@@ -46,7 +51,8 @@ const Orders = () => {
     return badges[statut] || "badge-default";
   };
 
-  const getStatutText = (statut) => {
+  const getStatutText = (statusOrStatut) => {
+    const statut = statusOrStatut || "";
     const texts = {
       en_attente: "En attente",
       confirmee: "Confirmée",
@@ -74,45 +80,104 @@ const Orders = () => {
           </div>
         ) : (
           <div className="orders-list">
-            {orders.map((order) => (
-              <div key={order._id} className="order-card">
-                <div className="order-header">
-                  <div>
-                    <h3>Commande #{order._id.slice(-8)}</h3>
-                    <p className="order-date">
-                      {new Date(order.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
-                  <span className={`badge ${getStatutBadge(order.statut)}`}>
-                    {getStatutText(order.statut)}
-                  </span>
-                </div>
+            {orders.map((order) => {
+              const status = order.status || order.statut;
 
-                <div className="order-products">
-                  {order.produits.map((item, index) => (
-                    <div key={index} className="order-product">
-                      <span>
-                        {item.nom} x {item.quantite}
-                      </span>
-                      <span>{(item.prix * item.quantite).toFixed(2)} DT</span>
+              const produits = order.items || order.produits || [];
+
+              const subtotal =
+                typeof order.subtotal === "number"
+                  ? order.subtotal
+                  : typeof order.montantTotal === "number"
+                  ? order.montantTotal
+                  : 0;
+
+              const shipping =
+                typeof order.shippingCost === "number"
+                  ? order.shippingCost
+                  : typeof order.fraisLivraison === "number"
+                  ? order.fraisLivraison
+                  : 0;
+
+              const total =
+                typeof order.totalAmount === "number"
+                  ? order.totalAmount
+                  : subtotal + shipping;
+
+              return (
+                <div key={order._id} className="order-card">
+                  <div className="order-header">
+                    <div>
+                      <h3>
+                        Commande #{order.orderNumber || order._id?.slice(-8)}
+                      </h3>
+                      <p className="order-date">
+                        {new Date(order.createdAt).toLocaleDateString("fr-FR")}
+                      </p>
                     </div>
-                  ))}
-                </div>
-
-                <div className="order-footer">
-                  <div className="order-total">
-                    <strong>Total:</strong>
-                    <strong>
-                      {(order.montantTotal + order.fraisLivraison).toFixed(2)}{" "}
-                      DT
-                    </strong>
+                    <span className={`badge ${getStatutBadge(status)}`}>
+                      {getStatutText(status)}
+                    </span>
                   </div>
-                  <Link to={`/orders/${order._id}`} className="btn btn-sm">
-                    Voir détails
-                  </Link>
+
+                  <div className="order-products">
+                    {produits.map((item, index) => {
+                      const name =
+                        item.nom ||
+                        item.name ||
+                        item.product?.nom ||
+                        item.product?.name;
+                      const quantity =
+                        item.quantite || item.quantity || item.qty || 1;
+                      const price =
+                        typeof item.prix === "number"
+                          ? item.prix
+                          : typeof item.price === "number"
+                          ? item.price
+                          : typeof item.product?.prix === "number"
+                          ? item.product.prix
+                          : typeof item.product?.price === "number"
+                          ? item.product.price
+                          : 0;
+
+                      const rawImage =
+                        item.image ||
+                        item.imageUrl ||
+                        (item.product?.images && item.product.images[0]) ||
+                        (item.product?.image && item.product.image);
+
+                      const imageSrc = rawImage
+                        ? getImageUrl(rawImage)
+                        : "https://placehold.co/80x80?text=Img";
+
+                      return (
+                        <div key={index} className="order-product">
+                          <img
+                            src={imageSrc}
+                            alt={name}
+                            className="order-product-image"
+                          />
+                          <span>
+                            {name} x {quantity}
+                          </span>
+                          <span>{(price * quantity).toFixed(2)} DT</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="order-footer">
+                    <div className="order-total">
+                      <strong>Total:</strong>
+                      <strong>{total.toFixed(2)} DT</strong>
+                    </div>
+                    <Link to={`/orders/${order._id}`} className="btn btn-sm">
+                      Voir détails
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

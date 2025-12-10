@@ -4,6 +4,7 @@ import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { FiPackage, FiMapPin, FiCreditCard, FiCheck } from "react-icons/fi";
+import { getImageUrl } from "../utils/imageUrl";
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -31,11 +32,11 @@ const OrderDetail = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate(`/login?redirect=/orders/${id}`);
       return;
     }
     fetchOrder();
-  }, [fetchOrder, isAuthenticated, navigate]);
+  }, [fetchOrder, isAuthenticated, navigate, id]);
 
   const handleCancelOrder = async () => {
     if (!window.confirm("Êtes-vous sûr de vouloir annuler cette commande ?"))
@@ -86,10 +87,10 @@ const OrderDetail = () => {
   if (!order) return <div className="container">Commande non trouvée</div>;
 
   return (
-    <div className="container">
-      <div style={{ marginBottom: "2rem" }}>
+    <div className="container order-detail-page">
+      <div className="order-detail-header">
         <h1>Commande {order.orderNumber}</h1>
-        <p style={{ color: "var(--gray-600)" }}>
+        <p>
           Passée le{" "}
           {new Date(order.createdAt).toLocaleDateString("fr-FR", {
             day: "numeric",
@@ -103,27 +104,16 @@ const OrderDetail = () => {
 
       {/* Statut de la commande */}
       <div
+        className="order-status-card"
         style={{
-          background: "white",
-          padding: "2rem",
-          borderRadius: "var(--radius-lg)",
-          marginBottom: "2rem",
-          border: `3px solid ${getStatusColor(order.status)}`,
+          borderColor: getStatusColor(order.status),
         }}
       >
-        <div style={{ textAlign: "center" }}>
+        <div>
           <div
+            className="status-icon-wrapper"
             style={{
-              width: "80px",
-              height: "80px",
-              margin: "0 auto 1rem",
               background: getStatusColor(order.status),
-              color: "white",
-              borderRadius: "var(--radius-full)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "2.5rem",
             }}
           >
             {order.status === "livree" ? <FiCheck /> : <FiPackage />}
@@ -145,25 +135,10 @@ const OrderDetail = () => {
 
         {/* Timeline */}
         {order.statusHistory && order.statusHistory.length > 0 && (
-          <div
-            style={{
-              marginTop: "2rem",
-              paddingTop: "2rem",
-              borderTop: "1px solid var(--gray-200)",
-            }}
-          >
+          <div className="status-timeline">
             <h3 style={{ marginBottom: "1rem" }}>Historique</h3>
             {order.statusHistory.map((history, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  gap: "1rem",
-                  marginBottom: "1rem",
-                  paddingLeft: "1rem",
-                  borderLeft: "3px solid var(--gray-300)",
-                }}
-              >
+              <div key={index} className="timeline-item">
                 <div>
                   <strong>{getStatusLabel(history.status)}</strong>
                   <p style={{ color: "var(--gray-600)", fontSize: "0.9rem" }}>
@@ -180,82 +155,58 @@ const OrderDetail = () => {
           <button
             onClick={handleCancelOrder}
             className="btn btn-danger"
-            style={{ marginTop: "1rem", width: "100%" }}
+            style={{ marginTop: "1rem", width: "100%", maxWidth: "300px" }}
           >
             Annuler la commande
           </button>
         )}
       </div>
 
-      <div
-        style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "2rem" }}
-      >
+      <div className="order-content-grid">
         {/* Articles commandés */}
         <div>
-          <div
-            style={{
-              background: "white",
-              padding: "2rem",
-              borderRadius: "var(--radius-lg)",
-            }}
-          >
-            <h3 style={{ marginBottom: "1.5rem" }}>Articles commandés</h3>
-            {order.items.map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  gap: "1.5rem",
-                  padding: "1rem 0",
-                  borderBottom:
-                    index < order.items.length - 1
-                      ? "1px solid var(--gray-200)"
-                      : "none",
-                }}
-              >
-                <img
-                  src={item.image || "https://placehold.co/100x100?text=Img"}
-                  alt={item.name}
-                  style={{
-                    width: "100px",
-                    height: "100px",
-                    objectFit: "cover",
-                    borderRadius: "var(--radius)",
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <h4>{item.name}</h4>
-                  <p style={{ color: "var(--gray-600)", marginTop: "0.5rem" }}>
-                    Taille: {item.size} | Couleur: {item.color}
-                  </p>
-                  <p style={{ marginTop: "0.5rem" }}>
-                    Quantité: {item.quantity}
-                  </p>
+          <div className="section-card">
+            <h3>Articles commandés</h3>
+            {order.items.map((item, index) => {
+              const rawImage =
+                item.image ||
+                item.imageUrl ||
+                (item.product?.images && item.product.images[0]) ||
+                (item.product?.image && item.product.image);
+
+              const imageSrc = rawImage
+                ? getImageUrl(rawImage)
+                : "https://placehold.co/100x100?text=Img";
+
+              return (
+                <div key={index} className="order-item-row">
+                  <img
+                    src={imageSrc}
+                    alt={item.name}
+                    className="order-item-image"
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h4>{item.name}</h4>
+                    <p
+                      style={{ color: "var(--gray-600)", marginTop: "0.5rem" }}
+                    >
+                      Taille: {item.size} | Couleur: {item.color}
+                    </p>
+                    <p style={{ marginTop: "0.5rem" }}>
+                      Quantité: {item.quantity}
+                    </p>
+                  </div>
+                  <div style={{ fontWeight: "700", fontSize: "1.1rem" }}>
+                    {(item.price * item.quantity).toFixed(2)} DT
+                  </div>
                 </div>
-                <div style={{ fontWeight: "700", fontSize: "1.1rem" }}>
-                  {(item.price * item.quantity).toFixed(2)} DT
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Adresse de livraison */}
-          <div
-            style={{
-              background: "white",
-              padding: "2rem",
-              borderRadius: "var(--radius-lg)",
-              marginTop: "2rem",
-            }}
-          >
-            <h3
-              style={{
-                marginBottom: "1.5rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
+          <div className="section-card">
+            <h3>
               <FiMapPin /> Adresse de livraison
             </h3>
             <p>
@@ -274,22 +225,8 @@ const OrderDetail = () => {
           </div>
 
           {/* Mode de paiement */}
-          <div
-            style={{
-              background: "white",
-              padding: "2rem",
-              borderRadius: "var(--radius-lg)",
-              marginTop: "2rem",
-            }}
-          >
-            <h3
-              style={{
-                marginBottom: "1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
+          <div className="section-card">
+            <h3>
               <FiCreditCard /> Mode de paiement
             </h3>
             <p>Paiement à la livraison (en espèces)</p>
@@ -306,35 +243,20 @@ const OrderDetail = () => {
 
         {/* Résumé */}
         <div>
-          <div
-            style={{
-              background: "white",
-              padding: "2rem",
-              borderRadius: "var(--radius-lg)",
-              position: "sticky",
-              top: "100px",
-            }}
-          >
+          <div className="order-summary-card">
             <h3 style={{ marginBottom: "1.5rem" }}>Résumé</h3>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "0.75rem",
-              }}
-            >
+            <div className="order-summary-row">
               <span>Sous-total</span>
               <span>{order.subtotal.toFixed(2)} DT</span>
             </div>
 
             <div
+              className="order-summary-row"
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "1rem",
                 paddingBottom: "1rem",
                 borderBottom: "2px solid var(--gray-200)",
+                marginBottom: "1rem",
               }}
             >
               <span>Livraison</span>
@@ -345,14 +267,7 @@ const OrderDetail = () => {
               </span>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "1.5rem",
-                fontWeight: "700",
-              }}
-            >
+            <div className="order-summary-total">
               <span>Total</span>
               <span style={{ color: "var(--primary)" }}>
                 {order.totalAmount.toFixed(2)} DT

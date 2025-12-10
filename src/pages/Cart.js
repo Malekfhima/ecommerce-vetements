@@ -2,15 +2,23 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { FaTrash, FaMinus, FaPlus } from "react-icons/fa";
+import { getImageUrl } from "../utils/imageUrl";
 
 const Cart = () => {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
+  const {
+    cartItems,
+    removeFromCart,
+    updateQuantity,
+    getCartTotal,
+    getShippingCost,
+    getFinalTotal,
+  } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleCheckout = () => {
     if (!user) {
-      navigate("/login?redirect=checkout");
+      navigate("/login?redirect=/checkout");
     } else {
       navigate("/checkout");
     }
@@ -52,6 +60,16 @@ const Cart = () => {
                   ? product.price
                   : 0;
 
+              const discount =
+                typeof product.discount === "number" &&
+                product.discount > 0 &&
+                product.discount < 100
+                  ? product.discount
+                  : 0;
+
+              const unitPrice =
+                discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+
               const quantity = item.quantity || 1;
 
               return (
@@ -62,7 +80,7 @@ const Cart = () => {
                   <img
                     src={
                       product.images && product.images[0]
-                        ? product.images[0]
+                        ? getImageUrl(product.images[0])
                         : "https://placehold.co/150x150?text=Img"
                     }
                     alt={product.nom}
@@ -103,9 +121,9 @@ const Cart = () => {
                   </div>
 
                   <div className="item-price">
-                    <p>{basePrice.toFixed(2)} DT</p>
+                    <p>{unitPrice.toFixed(2)} DT</p>
                     <p className="item-total">
-                      {(basePrice * quantity).toFixed(2)} DT
+                      {(unitPrice * quantity).toFixed(2)} DT
                     </p>
                   </div>
 
@@ -132,12 +150,12 @@ const Cart = () => {
 
             <div className="summary-row">
               <span>Frais de livraison:</span>
-              <span>7.00 DT</span>
+              <span>{getShippingCost().toFixed(2)} DT</span>
             </div>
 
             <div className="summary-row total">
               <span>Total:</span>
-              <span>{(getCartTotal() + 7).toFixed(2)} DT</span>
+              <span>{getFinalTotal().toFixed(2)} DT</span>
             </div>
 
             <button

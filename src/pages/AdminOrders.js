@@ -114,57 +114,82 @@ const AdminOrders = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr
-                key={order._id}
-                style={{ borderBottom: "1px solid var(--gray-200)" }}
-              >
-                <td style={{ padding: "1rem", fontWeight: "600" }}>
-                  {order.orderNumber}
-                </td>
-                <td style={{ padding: "1rem" }}>
-                  {order.user?.name}
-                  <br />
-                  <small style={{ color: "var(--gray-600)" }}>
-                    {order.user?.email}
-                  </small>
-                </td>
-                <td style={{ padding: "1rem" }}>
-                  {new Date(order.createdAt).toLocaleDateString("fr-FR")}
-                </td>
-                <td style={{ padding: "1rem", fontWeight: "600" }}>
-                  {order.totalAmount.toFixed(2)} DT
-                </td>
-                <td style={{ padding: "1rem" }}>
-                  {getStatusBadge(order.status)}
-                </td>
-                <td style={{ padding: "1rem" }}>
-                  {order.status !== "livree" && order.status !== "annulee" && (
-                    <select
-                      className="form-select"
-                      value={order.status}
-                      onChange={(e) => updateStatus(order._id, e.target.value)}
-                      style={{ fontSize: "0.875rem" }}
+            {orders.map((order) => {
+              const subtotal =
+                typeof order.subtotal === "number" ? order.subtotal : 0;
+
+              const shipping =
+                typeof order.shippingCost === "number"
+                  ? order.shippingCost
+                  : typeof order.fraisLivraison === "number"
+                  ? order.fraisLivraison
+                  : 0;
+
+              const fallbackTotal =
+                typeof order.montantTotal === "number"
+                  ? order.montantTotal + shipping
+                  : subtotal + shipping;
+
+              const total =
+                typeof order.totalAmount === "number"
+                  ? order.totalAmount
+                  : fallbackTotal;
+
+              return (
+                <tr
+                  key={order._id}
+                  style={{ borderBottom: "1px solid var(--gray-200)" }}
+                >
+                  <td style={{ padding: "1rem", fontWeight: "600" }}>
+                    {order.orderNumber}
+                  </td>
+                  <td style={{ padding: "1rem" }}>
+                    {order.user?.name}
+                    <br />
+                    <small style={{ color: "var(--gray-600)" }}>
+                      {order.user?.email}
+                    </small>
+                  </td>
+                  <td style={{ padding: "1rem" }}>
+                    {new Date(order.createdAt).toLocaleDateString("fr-FR")}
+                  </td>
+                  <td style={{ padding: "1rem", fontWeight: "600" }}>
+                    {total.toFixed(2)} DT
+                  </td>
+                  <td style={{ padding: "1rem" }}>
+                    {getStatusBadge(order.status)}
+                  </td>
+                  <td style={{ padding: "1rem" }}>
+                    {order.status !== "livree" &&
+                      order.status !== "annulee" && (
+                        <select
+                          className="form-select"
+                          value={order.status}
+                          onChange={(e) =>
+                            updateStatus(order._id, e.target.value)
+                          }
+                          style={{ fontSize: "0.875rem" }}
+                        >
+                          <option value="en_attente">En attente</option>
+                          <option value="confirmee">Confirmée</option>
+                          <option value="en_preparation">En préparation</option>
+                          <option value="expediee">Expédiée</option>
+                          <option value="livree">Livrée</option>
+                          <option value="annulee">Annulée</option>
+                        </select>
+                      )}
+                  </td>
+                  <td style={{ padding: "1rem", textAlign: "right" }}>
+                    <Link
+                      to={`/orders/${order._id}`}
+                      className="btn btn-sm btn-primary"
                     >
-                      <option value="en_attente">En attente</option>
-                      <option value="confirmee">Confirmée</option>
-                      <option value="en_preparation">En préparation</option>
-                      <option value="expediee">Expédiée</option>
-                      <option value="livree">Livrée</option>
-                      <option value="annulee">Annulée</option>
-                    </select>
-                  )}
-                </td>
-                <td style={{ padding: "1rem", textAlign: "right" }}>
-                  <Link
-                    to={`/orders/${order._id}`}
-                    className="btn btn-sm btn-primary"
-                  >
-                    <FiEye /> Voir
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                      <FiEye /> Voir
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 

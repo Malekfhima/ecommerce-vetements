@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FiStar, FiShoppingCart } from "react-icons/fi";
 import { useCart } from "../context/CartContext";
+import { getImageUrl } from "../utils/imageUrl";
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -49,10 +50,7 @@ const ProductCard = ({ product }) => {
     <Link to={`/products/${product._id}`} className="product-card">
       <div className="product-image-wrapper">
         <img
-          src={
-            (product.images && product.images[0]) ||
-            "https://via.placeholder.com/300"
-          }
+          src={getImageUrl(product.images && product.images[0])}
           alt={product.name || product.nom}
           className="product-image"
         />

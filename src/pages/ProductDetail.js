@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import { Helmet } from "react-helmet";
 import { toast } from "react-toastify";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { FaStar, FaMinus, FaPlus } from "react-icons/fa";
+import { getImageUrl } from "../utils/imageUrl";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -84,11 +86,15 @@ const ProductDetail = () => {
   const hasPromo = product.prixPromo && product.prixPromo < product.prix;
   const images =
     product.images && product.images.length > 0
-      ? product.images
+      ? product.images.map((img) => getImageUrl(img))
       : ["https://placehold.co/600x800?text=Vêtement"];
 
   return (
     <div className="product-detail">
+      <Helmet>
+        <title>{product.nom} - VêtementShop</title>
+        <meta name="description" content={product.description} />
+      </Helmet>
       <div className="container">
         <div className="product-detail-content">
           <div className="product-images">
