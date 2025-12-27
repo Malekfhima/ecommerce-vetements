@@ -278,6 +278,6 @@ Ce projet est libre d'utilisation pour des fins d'apprentissage et commerciales.
 
 Pour toute question ou problème, créez une issue ou contactez le support.
 
----
+
 
 **Bon développement! 🎉**
